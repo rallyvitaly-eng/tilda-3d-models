@@ -1,12 +1,44 @@
-<!-- Tilda Zero Block: fixed initial camera, rotation enabled, zoom and pan disabled. Change 001 to 002...008. -->
+<!-- Tilda Zero Block: change 001 to 002...008 for each model. Temporary camera inspector. -->
 <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.1.0/model-viewer.min.js"></script>
-<model-viewer
-  src="https://rallyvitaly-eng.github.io/tilda-3d-models/%D0%9B%D0%9C%D0%A5.2026.001.glb"
-  camera-controls
-  camera-orbit="223.9deg 0deg 0.950m"
-  disable-zoom
-  disable-pan
-  shadow-intensity="0.6"
-  loading="eager"
-  style="display:block;width:100%;height:100%;min-height:320px;background:transparent">
-</model-viewer>
+<div class="lmh-viewer-wrap" style="position:relative;width:100%;height:100%;min-height:320px">
+  <model-viewer
+    src="https://rallyvitaly-eng.github.io/tilda-3d-models/%D0%9B%D0%9C%D0%A5.2026.001.glb"
+    camera-controls
+    disable-pan
+    camera-orbit="45deg 75deg auto"
+    shadow-intensity="0.6"
+    loading="eager"
+    style="display:block;width:100%;height:100%;background:transparent">
+  </model-viewer>
+  <div style="position:absolute;left:12px;bottom:12px;z-index:10;padding:12px 14px;border-radius:10px;background:rgba(20,20,20,.9);color:#fff;font:12px/1.5 Arial,sans-serif;max-width:calc(100% - 24px)">
+    <div style="font-weight:bold;margin-bottom:6px">Camera inspector</div>
+    <div class="lmh-camera-values" style="font:12px/1.5 monospace;overflow-wrap:anywhere">Загрузка…</div>
+    <button type="button" class="lmh-copy-camera" style="margin-top:9px;padding:7px 12px;border:0;border-radius:5px;background:#fff;color:#111;cursor:pointer;font:12px Arial,sans-serif">Скопировать ракурс</button>
+  </div>
+</div>
+<script>
+(function(){
+  const root=document.currentScript.previousElementSibling;
+  const viewer=root.querySelector('model-viewer');
+  const values=root.querySelector('.lmh-camera-values');
+  const button=root.querySelector('.lmh-copy-camera');
+  let output='';
+  function update(){
+    if(typeof viewer.getCameraOrbit!=='function')return;
+    const orbit=viewer.getCameraOrbit(),deg=180/Math.PI;
+    output='camera-orbit="'+(orbit.theta*deg).toFixed(1)+'deg '+(orbit.phi*deg).toFixed(1)+'deg '+orbit.radius.toFixed(3)+'m"';
+    values.textContent=output;
+  }
+  viewer.addEventListener('camera-change',update);
+  viewer.addEventListener('load',update);
+  customElements.whenDefined('model-viewer').then(update);
+  button.addEventListener('click',async function(){
+    update();
+    if(!output)return;
+    try{await navigator.clipboard.writeText(output)}
+    catch(e){const el=document.createElement('textarea');el.value=output;document.body.appendChild(el);el.select();document.execCommand('copy');el.remove()}
+    button.textContent='Скопировано!';
+    setTimeout(()=>button.textContent='Скопировать ракурс',1400);
+  });
+})();
+</script>

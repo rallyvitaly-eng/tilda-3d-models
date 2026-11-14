@@ -1,44 +1,28 @@
-<!-- Tilda Zero Block: change 001 to 002...008 for each model. Temporary camera inspector. -->
+<!-- Tilda Zero Block. Change only data-model="001" to 002...008 for each card. -->
 <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.1.0/model-viewer.min.js"></script>
-<div class="lmh-viewer-wrap" style="position:relative;width:100%;height:100%;min-height:320px">
-  <model-viewer
-    src="https://rallyvitaly-eng.github.io/tilda-3d-models/%D0%9B%D0%9C%D0%A5.2026.001.glb"
-    camera-controls
-    disable-pan
-    camera-orbit="45deg 75deg auto"
-    shadow-intensity="0.6"
-    loading="eager"
+<div class="lmh-3d" data-model="001" style="width:100%;height:100%;min-height:320px">
+  <model-viewer camera-controls disable-zoom disable-pan
+    shadow-intensity="0.6" loading="eager"
     style="display:block;width:100%;height:100%;background:transparent">
   </model-viewer>
-  <div style="position:absolute;left:12px;bottom:12px;z-index:10;padding:12px 14px;border-radius:10px;background:rgba(20,20,20,.9);color:#fff;font:12px/1.5 Arial,sans-serif;max-width:calc(100% - 24px)">
-    <div style="font-weight:bold;margin-bottom:6px">Camera inspector</div>
-    <div class="lmh-camera-values" style="font:12px/1.5 monospace;overflow-wrap:anywhere">Загрузка…</div>
-    <button type="button" class="lmh-copy-camera" style="margin-top:9px;padding:7px 12px;border:0;border-radius:5px;background:#fff;color:#111;cursor:pointer;font:12px Arial,sans-serif">Скопировать ракурс</button>
-  </div>
 </div>
 <script>
 (function(){
   const root=document.currentScript.previousElementSibling;
   const viewer=root.querySelector('model-viewer');
-  const values=root.querySelector('.lmh-camera-values');
-  const button=root.querySelector('.lmh-copy-camera');
-  let output='';
-  function update(){
-    if(typeof viewer.getCameraOrbit!=='function')return;
-    const orbit=viewer.getCameraOrbit(),deg=180/Math.PI;
-    output='camera-orbit="'+(orbit.theta*deg).toFixed(1)+'deg '+(orbit.phi*deg).toFixed(1)+'deg '+orbit.radius.toFixed(3)+'m"';
-    values.textContent=output;
-  }
-  viewer.addEventListener('camera-change',update);
-  viewer.addEventListener('load',update);
-  customElements.whenDefined('model-viewer').then(update);
-  button.addEventListener('click',async function(){
-    update();
-    if(!output)return;
-    try{await navigator.clipboard.writeText(output)}
-    catch(e){const el=document.createElement('textarea');el.value=output;document.body.appendChild(el);el.select();document.execCommand('copy');el.remove()}
-    button.textContent='Скопировано!';
-    setTimeout(()=>button.textContent='Скопировать ракурс',1400);
-  });
+  const cameras={
+    '001':'584.0deg 6.8deg 0.925m',
+    '002':'240.4deg 11.5deg 1.856m',
+    '003':'265.1deg 5.5deg 0.919m',
+    '004':'109.3deg 6.9deg 2.665m',
+    '005':'39.1deg 30.5deg 2.523m',
+    '006':'58.2deg 5.2deg 1.811m',
+    '007':'79.0deg 0.0deg 2.710m',
+    '008':'-46.2deg 0.4deg 2.732m'
+  };
+  const n=root.dataset.model;
+  if(!cameras[n])return;
+  viewer.setAttribute('camera-orbit',cameras[n]);
+  viewer.src='https://rallyvitaly-eng.github.io/tilda-3d-models/'+encodeURIComponent('ЛМХ.2026.'+n+'.glb');
 })();
 </script>

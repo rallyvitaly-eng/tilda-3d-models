@@ -24,6 +24,16 @@
   };
   if(!cameras[n])return;
   viewer.setAttribute('camera-orbit',cameras[n]);
+  // model-viewer defines its own cursor inside Shadow DOM.
+  // Override that internal cursor so the visible 3D canvas uses 'move'.
+  customElements.whenDefined('model-viewer').then(()=>{
+    const shadow=viewer.shadowRoot;
+    if(!shadow||shadow.querySelector('[data-lmh-move-cursor]'))return;
+    const style=document.createElement('style');
+    style.setAttribute('data-lmh-move-cursor','');
+    style.textContent=':host, :host * { cursor: move !important; }';
+    shadow.appendChild(style);
+  });
   if(window.matchMedia('(max-width:767px)').matches){
     viewer.setAttribute('minimum-render-scale','0.5');
     viewer.setAttribute('shadow-intensity','0');

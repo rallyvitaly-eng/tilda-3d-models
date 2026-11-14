@@ -1,17 +1,16 @@
-<!-- Tilda Zero Block. Duplicate this HTML block for each model; change data-model="001" to 002...008. -->
+<!-- Place this HTML block ABOVE a separate static image in Tilda Zero Block.
+     Duplicate for each card and change data-model="001" to 002...008. -->
 <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.1.0/model-viewer.min.js"></script>
-<div class="lmh-3d" data-model="001" style="position:relative;width:100%;height:100%;min-height:320px">
-  <model-viewer camera-controls disable-zoom disable-pan loading="lazy"
+<div class="lmh-3d" data-model="001" style="position:relative;width:100%;height:100%;min-height:320px;cursor:grab;touch-action:pan-y">
+  <model-viewer camera-controls disable-zoom disable-pan loading="eager"
     shadow-intensity="0.6" interaction-prompt="none"
-    style="display:block;width:100%;height:100%;background:transparent">
+    style="display:block;width:100%;height:100%;background:#F6F6F6;opacity:0;transition:opacity .45s ease;pointer-events:none">
   </model-viewer>
-  <div class="lmh-status" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;font:13px Arial,sans-serif;color:#777">3D-модель</div>
 </div>
 <script>
 (function(){
   const root=document.currentScript.previousElementSibling;
   const viewer=root.querySelector('model-viewer');
-  const status=root.querySelector('.lmh-status');
   const n=root.dataset.model;
   const cameras={
     '001':'584.0deg 6.8deg 0.925m',
@@ -25,63 +24,78 @@
   };
   if(!cameras[n])return;
   viewer.setAttribute('camera-orbit',cameras[n]);
-  // Reduce mobile GPU work without changing the GLB files.
-  if(window.matchMedia('(max-width: 767px)').matches){
+  if(window.matchMedia('(max-width:767px)').matches){
     viewer.setAttribute('minimum-render-scale','0.5');
     viewer.setAttribute('shadow-intensity','0');
   }
-
-  // Shared loader across all Tilda HTML blocks. Only one GLB downloads at a time.
-  if(!window.__lmhModelLoader){
-    const manager={
-      items:[],busy:false,started:false,observer:null,
-      register(item){
-        this.items.push(item);
-        if(this.observer)this.observer.observe(item.root);
-        if(!this.started){
-          this.started=true;
-          // Allow other Zero Blocks to register before selecting model 001.
-          setTimeout(()=>this.init(),200);
-        }
-      },
-      init(){
-        if('IntersectionObserver' in window){
-          this.observer=new IntersectionObserver(entries=>{
-            entries.forEach(e=>{
-              const item=this.items.find(x=>x.root===e.target);
-              if(item&&e.isIntersecting){item.visible=true;this.observer.unobserve(item.root)}
-            });
-            this.next();
-          },{rootMargin:'250px 0px',threshold:0});
-          this.items.forEach(item=>this.observer.observe(item.root));
-        }else{
-          this.items.forEach(item=>item.visible=true);
-        }
+  // Nothing is downloaded until a user interacts with a card.
+  // A shared queue prevents multiple GLB downloads starting simultaneously.
+  if(!window.__lmhHoverQueue){
+    window.__lmhHoverQueue={
+      pending:[],busy:false,
+      add(item){
+        this.pending.push(item);
         this.next();
       },
       next(){
-        if(this.busy||!this.observer&&'IntersectionObserver' in window)return;
-        const first=this.items.find(x=>x.n==='001'&&!x.done&&!x.started);
-        const item=first||this.items.filter(x=>x.visible&&!x.done&&!x.started).sort((a,b)=>Number(a.n)-Number(b.n))[0];
-        if(!item)return;
-        this.busy=true;item.started=true;
-        item.status.textContent='Загрузка 3D…';
-        const finish=(failed)=>{
-          if(item.done)return;
-          item.done=true;
-          item.status.textContent=failed?'Не удалось загрузить 3D':'';
-          item.status.style.display=failed?'flex':'none';
-          this.busy=false;this.next();
+        if(this.busy||!this.pending.length)return;
+        const item=this.pending.shift();
+        this.busy=true;
+        let finished=false;
+        const finish=()=>{
+          if(finished)return;
+          finished=true;
+          clearTimeout(timeout);
+          this.busy=false;
+          this.next();
         };
-        item.viewer.addEventListener('load',()=>finish(false),{once:true});
-        item.viewer.addEventListener('error',()=>finish(true),{once:true});
-        // Avoid blocking the rest of the page forever on an unreliable connection.
-        setTimeout(()=>finish(true),45000);
+        item.viewer.addEventListener('load',()=>{
+          item.loaded=true;
+          if(item.active)item.show();
+          finish();
+        },{once:true});
+        item.viewer.addEventListener('error',()=>{
+          item.root.style.cursor='default';
+          finish();
+        },{once:true});
+        const timeout=setTimeout(finish,45000);
         item.viewer.src='https://rallyvitaly-eng.github.io/tilda-3d-models/'+encodeURIComponent('ЛМХ.2026.'+item.n+'.glb');
       }
     };
-    window.__lmhModelLoader=manager;
   }
-  window.__lmhModelLoader.register({root,viewer,status,n,visible:false,started:false,done:false});
+  const item={
+    root,viewer,n,loaded:false,active:false,requested:false,
+    show(){
+      viewer.style.opacity='1';
+      viewer.style.pointerEvents='auto';
+    },
+    hide(){
+      viewer.style.opacity='0';
+      viewer.style.pointerEvents='none';
+    },
+    request(){
+      if(!this.requested){
+        this.requested=true;
+        window.__lmhHoverQueue.add(this);
+      }
+      if(this.loaded)this.show();
+    }
+  };
+  const hasHover=window.matchMedia('(hover:hover) and (pointer:fine)').matches;
+  if(hasHover){
+    root.addEventListener('pointerenter',()=>{
+      item.active=true;
+      item.request();
+    });
+    root.addEventListener('pointerleave',()=>{
+      item.active=false;
+      item.hide();
+    });
+  }else{
+    root.addEventListener('click',()=>{
+      item.active=true;
+      item.request();
+    });
+  }
 })();
 </script>

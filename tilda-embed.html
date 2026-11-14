@@ -25,6 +25,11 @@
   };
   if(!cameras[n])return;
   viewer.setAttribute('camera-orbit',cameras[n]);
+  // Reduce mobile GPU work without changing the GLB files.
+  if(window.matchMedia('(max-width: 767px)').matches){
+    viewer.setAttribute('minimum-render-scale','0.5');
+    viewer.setAttribute('shadow-intensity','0');
+  }
 
   // Shared loader across all Tilda HTML blocks. Only one GLB downloads at a time.
   if(!window.__lmhModelLoader){

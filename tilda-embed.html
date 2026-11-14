@@ -24,15 +24,25 @@
   };
   if(!cameras[n])return;
   viewer.setAttribute('camera-orbit',cameras[n]);
-  // model-viewer defines its own cursor inside Shadow DOM.
-  // Override that internal cursor so the visible 3D canvas uses 'move'.
+  // Force the cursor on the actual interactive elements inside model-viewer.
+  // The component can assign 'grab'/'grabbing' dynamically via inline styles.
   customElements.whenDefined('model-viewer').then(()=>{
+    viewer.style.setProperty('cursor','move','important');
     const shadow=viewer.shadowRoot;
-    if(!shadow||shadow.querySelector('[data-lmh-move-cursor]'))return;
-    const style=document.createElement('style');
-    style.setAttribute('data-lmh-move-cursor','');
-    style.textContent=':host, :host * { cursor: move !important; }';
-    shadow.appendChild(style);
+    if(!shadow)return;
+    const applyCursor=()=>{
+      for(const el of shadow.querySelectorAll('*')){
+        if(el.style && (el.style.getPropertyValue('cursor')!=='move' ||
+            el.style.getPropertyPriority('cursor')!=='important')){
+          el.style.setProperty('cursor','move','important');
+        }
+      }
+    };
+    applyCursor();
+    const observer=new MutationObserver(applyCursor);
+    observer.observe(shadow,{subtree:true,attributes:true,attributeFilter:['style','class'],childList:true});
+    viewer.addEventListener('pointerenter',applyCursor);
+    viewer.addEventListener('pointerdown',applyCursor);
   });
   if(window.matchMedia('(max-width:767px)').matches){
     viewer.setAttribute('minimum-render-scale','0.5');
